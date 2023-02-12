@@ -1,7 +1,6 @@
 name: Review Pull Request
 
-on: 
-
+on:
   push:
     branches:
       - main
@@ -14,22 +13,30 @@ on:
 permissions:
   checks: write
   contents: write
+  pull-requests: write
 
 jobs:
   review-pull-request:
     name: Run tests to review pull requests
     runs-on: ubuntu-latest
     environment: DEV
+    env:
+      DB_STRING: ${{ vars.DB_STRING }}
+      DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+      DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+      OAUTH_REDIRECT_URL: ${{ vars.OAUTH_REDIRECT_URL }}
+      MOCK_USER: ${{ vars.MOCK_USER }}
+      NODE_ENV: ${{ vars.NODE_ENV }}
 
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v2
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v1
-        with: 
+        with:
           node-version: 16.15.0
-        
+
       - name: Install Node.js dependencies
         run: npm ci
 
@@ -37,7 +44,25 @@ jobs:
         uses: wearerequired/lint-action@v2
         with:
           eslint: true
-      
+
       - name: Run Front end test
         run: npm run test-frontend
 
+      - name: Upload failed screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: Cypress Screenshots
+          path: cypress/screenshots
+      - name: Upload videos
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: Cypress Videos
+          path: cypress/videos
+      - name: Report coverage
+        uses: romeovs/lcov-reporter-action@v0.2.19
+        if: always()
+        with:
+          lcov-file: ./coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
