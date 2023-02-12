@@ -84,10 +84,9 @@ app.use((err, req, res, next) => {
 
 //Connect To Database
 connectDB().then(() => {
+  const PORT = process.env.PORT || 2121;
   //Server Running
-  app.listen(process.env.PORT, () => {
-    console.log(
-      `Server is running on ${process.env.PORT}, you better catch it!`
-    );
+  app.listen(PORT, () => {
+    console.log(`Server is running on ${PORT}, you better catch it!`);
   });
 });
